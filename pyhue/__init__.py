@@ -21,7 +21,7 @@ class LightAlert(Enum):
     - NONE: The light is not performing an alert effect.
     - SELECT: The light is performing one breathe cycle.
     - LSELECT: The light is performing breathe cycles for 15 seconds or until
-               an "alert": "none" command is received.Note that this contains
+               an "alert": "none" command is received. Note that this contains
                the last alert sent to the light and not its current state.
                i.e. After the breathe cycle has finished the bridge does not
                reset the alert to “none“.
@@ -36,7 +36,7 @@ class LightEffect(Enum):
     """LightEffect. The different values you can set for the 'effect' feature
     of a Hue light.
 
-    - NONE:
+    - NONE: Stop any ongoing color loop.
     - COLOR_LOOP: The cycle through all hues using the current brightness and
                   saturation settings.
     """
@@ -52,7 +52,7 @@ class MyJsonEncoder(JSONEncoder):
     def default(self, o):
         """default.
 
-        :param o:
+        :param o: Object to encode.
         """
         if isinstance(o, (LightAlert, LightEffect)):
             return o.value
@@ -70,12 +70,17 @@ class HueBridge():
     def __check_kwarg(kwargs, kwargs_key, expected_type, limits=None):
         """check_argument.
 
-        :param self:
-        :param data_key:
-        :param kwargs:
-        :param kwargs_key:
-        :param expected_type:
-        :param limits:
+        :param kwargs: Provided keyword arguments.
+        :param kwargs_key: Keyword argument key to check.
+        :param expected_type: Expected type of the value of keyword argument.
+        :param limits: Limits/boundaries the value of the keyword argument
+                       must be within, if None, the value has no limits,
+                       defaults to None.
+
+        :raises ValueError: In case a provided keyword argument has invalid
+                            value.
+        :raises TypeError: In case a provided keyword argument has invalid
+                           type.
         """
         value = kwargs.get(kwargs_key)
 
@@ -97,9 +102,9 @@ class HueBridge():
 
     @staticmethod
     def __parse_response(response):
-        """__parse_response.
+        """__parse_response. Parse a response from a Hue bridge.
 
-        :param response:
+        :param response: Response content from the Hue bridge to parse.
         """
         if not response.ok:
             raise HueError('Error sending the request')
@@ -123,13 +128,26 @@ class HueBridge():
     # pylint: disable=too-many-arguments
     @classmethod
     def __do_request(cls, request_type, method, host, path, data):
-        """__do_request.
+        """__do_request. Send a request to the Hue bridge.
 
-        :param request_type:
-        :param method:
-        :param host:
-        :param path:
-        :param data:
+        :param request_type: Type of request to perform (e.i. 'POST', 'PUT',
+                             'DELETE'...).
+        :type request_type: str
+        :param method: Request method from the request module. Must match the
+                       request_type provided (e.i. requests.post, requests.put,
+                       requests.delete...).
+        :type method: function
+        :param host: Host name / IP address the Hue bridge is accessible at.
+        :type host: str
+        :param path: Path of the API to access.
+        :type path: str
+        :param data: Data to send.
+        :type data: dict
+
+        :raises HueError: In case of error.
+
+        :return: Dictionary containing the response from the Hue Bridge.
+        :rtype: dict
         """
         url = f'http://{host}/{path}'
 
@@ -155,11 +173,25 @@ class HueBridge():
                       generate_client_key=False):
         """configure_api.
 
-        :param host:
-        :param application_name:
-        :param device_name:
-        :param config_path:
-        :param generate_client_key:
+        :param host: Host name / IP address the Hue bridge is accessible at.
+        :type host: str
+        :param application_name: Application name to use to register the token.
+                                 To help identify which application is using
+                                 the token we will generate.
+        :type application_name: str
+        :param device_name: Device name to use to register the token. To help
+                            identify which device is using the token we will
+                            generate.
+        :type device_name: str
+        :param config_path: Path to where to write the configuration file with
+                            the authentication data within, defaults to
+                            HueBridge.DEFAULT_CONF_PATH.
+        :type config_path: str
+        :param generate_client_key: When set to true, a random 16 byte
+                                    clientkey is generated and returned in the
+                                    response. This key is encoded as ASCII hex
+                                    string of length 32, defaults to False.
+        :type generate_client_key: bool
         """
         if not isinstance(application_name, str):
             raise TypeError('Unexpected type for application_name')
@@ -200,10 +232,16 @@ class HueBridge():
             config_file.write(dumps(config, indent=4))
 
     def put(self, path, **data):
-        """put.
+        """put. Do an authenticated PUT request to the Hue bridge.
 
-        :param path:
-        :param data:
+        :param path: Path of the API to access.
+        :type path: str
+        :param **data: Data to be send along.
+
+        :raises HueError: In case of error.
+
+        :return: Dictionary containing the response from the Hue Bridge.
+        :rtype: dict
         """
         return self.__do_request('PUT',
                                  requests.put,
@@ -214,9 +252,14 @@ class HueBridge():
     def post(self, path, **data):
         """post. Do an authenticated POST request to the Hue bridge.
 
-        :param path:  Path of the API to access.
+        :param path: Path of the API to access.
         :type path: str
-        :param **kwargs:  Data to be send along.
+        :param **data: Data to be send along.
+
+        :raises HueError: In case of error.
+
+        :return: Dictionary containing the response from the Hue Bridge.
+        :rtype: dict
         """
         return self.__do_request('POST',
                                  requests.post,
@@ -227,10 +270,14 @@ class HueBridge():
     def get(self, path, **data):
         """get. Do an authenticated GET request to the Hue bridge.
 
-        :param path:  Path of the API to access.
+        :param path: Path of the API to access.
         :type path: str
-        :param data:  Data to be send along.
-        :type data: dict
+        :param **data: Data to be send along.
+
+        :raises HueError: In case of error.
+
+        :return: Dictionary containing the response from the Hue Bridge.
+        :rtype: dict
         """
         return self.__do_request('GET',
                                  requests.get,
@@ -238,13 +285,17 @@ class HueBridge():
                                  f'api/{self.__username}/{path}',
                                  data)
 
-    def delete(self, path, data):
+    def delete(self, path, **data):
         """delete. Do an authenticated DELETE request to the Hue bridge.
 
-        :param path:  Path of the API to access.
+        :param path: Path of the API to access.
         :type path: str
-        :param data:  Data to be send along.
-        :type data: dict
+        :param **data: Data to be send along.
+
+        :raises HueError: In case of error.
+
+        :return: Dictionary containing the response from the Hue Bridge.
+        :rtype: dict
         """
         return self.__do_request('DELETE',
                                  requests.delete,
@@ -255,7 +306,7 @@ class HueBridge():
     def __init__(self, config_path=DEFAULT_CONF_PATH):
         """__init__. HueBridge class initializer.
 
-        :param config_path:  Path to the Hue bridge configuration file to load,
+        :param config_path: Path to the Hue bridge configuration file to load,
                              defaults to HueBridge.DEFAULT_CONF_PATH.
         :type config_path: str
         """
@@ -276,7 +327,7 @@ class HueBridge():
     def __str__(self):
         """__str__. Get a human readable string describing this class.
 
-        :return: String descbribing this class.
+        :return: String describing this class.
         :rtype: str
         """
         return f'Hue bridge at {self.__host} with lights:\n' + \
@@ -293,20 +344,31 @@ class HueBridge():
     def get_full_state(self):
         """get_full_state. Get a exhaustive current state of the Hue bridge.
 
+        :raises HueError: In case of error.
+
         :return: JSSON as dict describing the full state of the Hue bridge.
         :rtype: dict
         """
-
         return self.get('')
 
     def get_configuration(self):
-        """get_configuration."""
+        """get_configuration. Get the current configuration from the Hue
+        bridge.
+
+        :raises HueError: In case of error.
+
+        :return: JSSON as dict describing the current configuration of the Hue
+                 bridge.
+        :rtype: dict
+        """
         return self.get('config')
 
     def set_configuration(self, **config):
-        """set_configuration.
+        """set_configuration. Set the Hue bridge configuration.
 
-        :param config:
+        :param config: Configuration to set in the Hue bridge.
+
+        :raises HueError: In case of error.
         """
         self.put('config', **config)
 
@@ -315,28 +377,45 @@ class HueBridge():
     #
 
     def get_light(self, light_id=None):
-        """get_light.
+        """get_light. Get light information.
 
-        :param light_id:
+        :param light_id: Light identifier you specifically wants the state of,
+                         if None then the state of all the lights will be
+                         returned, defaults to None.
+
+        :raises HueError: In case of error.
+
+        :return: JSON as dict describing the state of the lights.
+        :rtype: dict
         """
         return self.get('lights{}'.format(f'/{light_id}' if light_id else ''))
 
     def get_new_lights(self):
-        """get_new_lights."""
+        """get_new_lights. tGets a list of lights that were discovered the last
+        time a search for new lights was performed. The list of new lights is
+        always deleted when a new search is started.
+
+        :raises HueError: In case of error.
+
+        :return: JSON as dict listing the new lights.
+        :rtype: dict
+        """
         return self.get('lights/new')
 
     def rename_light(self, light_id, name):
         """rename_light.
 
-        :param light_id:
-        :param name:
+        :param light_id: ID of the light to rename.
+        :param name: New name for that light.
+
+        :raises HueError: In case of error.
         """
         self.put(f'lights/{light_id}', name=name)
 
     def set_light_state(self, light_id, **kwargs):
         """set_light_state.
 
-        :param light_id:  ID of the light which state to change.
+        :param light_id: ID of the light which state to change.
         :param on: On/Off state of the light. True turn it ON, False turns it
                    off. Defaults to not changing the on/off state of the light.
         :type on: bool
@@ -410,6 +489,13 @@ class HueBridge():
                                a multiple of 100ms and defaults to 4 (400ms).
                                For example, setting transition_time to 10 will
                                make the transition last 1 second.
+
+        :raises HueError: In case of error.
+        :raises KeyError: In case a provided keyword argument has invalid key.
+        :raises ValueError: In case a provided keyword argument has invalid
+                            value.
+        :raises TypeError: In case a provided keyword argument has invalid
+                           type.
         """
         keyword_arguments = {
             'on': [bool],
@@ -430,7 +516,7 @@ class HueBridge():
 
         for key in kwargs:
             if key not in keyword_arguments:
-                raise ValueError(f'Unknown {key} keyword argument')
+                raise KeyError(f'Unknown {key} keyword argument')
             self.__check_kwarg(kwargs, key, *keyword_arguments[key])
 
         self.put(f'lights/{light_id}/state', **kwargs)
