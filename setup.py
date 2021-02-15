@@ -19,7 +19,7 @@ package_dir = {
     'pyhue': 'pyhue'
 }
 
-scripts = [os.path.join('bin', 'hue_bridge_init.py')]
+scripts = [os.path.join('bin', 'pair_hue_bridge')]
 
 install_requires = ['requests>=2.23.0', 'zeroconf>=0.28.8']
 
