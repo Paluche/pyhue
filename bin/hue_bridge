@@ -1,0 +1,30 @@
+#!/usr/bin/env -S python3 -i
+"""
+    Setup script for an interactive session to interact with a Hue bridge.
+"""
+from argparse import ArgumentParser, RawDescriptionHelpFormatter
+from pyhue import HueBridge, LightAlert, LightEffect
+
+__all__ = ['LightAlert', 'LightEffect']
+
+if __name__ == '__main__':
+    parser = ArgumentParser(formatter_class=RawDescriptionHelpFormatter,
+                            description=__doc__)
+
+    parser.add_argument(
+        '-c',
+        '--config',
+        dest='config_path',
+        default=HueBridge.DEFAULT_CONF_PATH,
+        help='Specify the path to the configuration file to use to '
+             'authenticate with your Hue bridge. By default it will look at '
+             f'the path {HueBridge.DEFAULT_CONF_PATH}'
+    )
+
+    # Parse the arguments.
+    parsed = parser.parse_args()
+
+    hue_bridge = HueBridge(config_path=parsed.config_path)
+
+    print('HueBridge instance is named "hue_bridge"')
+    print(f'Available lights {hue_bridge.lights}')
