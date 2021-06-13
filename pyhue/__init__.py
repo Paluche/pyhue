@@ -201,12 +201,12 @@ class HueBridge():
 
         if len(application_name) > 20:
             raise ValueError(
-                'Application name too long (limited to 20 characters'
+                'Application name too long (limited to 20 characters)'
             )
 
         if len(device_name) > 19:
             raise ValueError(
-                'Device name too long (limited to 19 characters'
+                'Device name too long (limited to 19 characters)'
             )
 
         input('Press the link button on the bridge then press enter within '
