@@ -209,6 +209,15 @@ class HueBridge():
                 'Device name too long (limited to 19 characters)'
             )
 
+        if os.path.isfile(config_path):
+            confirmation = input(
+                f'A configuration file already exists at {config_path} are '
+                'you sure you want to override it? [N/y]'
+            )
+            if confirmation != 'y':
+                print('Aborting')
+                return
+
         input('Press the link button on the bridge then press enter within '
               '30 seconds')
 
