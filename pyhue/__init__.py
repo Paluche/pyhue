@@ -316,7 +316,7 @@ class HueBridge():
         """__init__. HueBridge class initializer.
 
         :param config_path: Path to the Hue bridge configuration file to load,
-                             defaults to HueBridge.DEFAULT_CONF_PATH.
+                            defaults to HueBridge.DEFAULT_CONF_PATH.
         :type config_path: str
         """
         with open(config_path) as config_file:
