@@ -163,6 +163,36 @@ class HueBridge():
 
         return cls.__parse_response(response)
 
+    @classmethod
+    def __mkdir_parents_internal(cls, path, full_path):
+        """__mkdir_parents_internal.
+
+        Internal method for __mkdir_parents().
+
+        :param path: Path to the directory to make.
+        :param full_path: Original full path __mkdir_parents() must make.
+        """
+        parent = os.path.dirname(path)
+
+        if not os.path.exists(parent):
+            if parent == path:
+                # Invalid path, let the function mkdir do the proper error
+                # exception.
+                os.mkdir(full_path)
+                return
+            cls.__mkdir_parents_internal(parent, full_path)
+
+        os.mkdir(path)
+
+    @classmethod
+    def __mkdir_parents(cls, path):
+        """__mkdir_parents_internal.
+        Method equivalent to the shell command 'mkdir --parents ${path}'
+
+        :param path: Path to the directory to make.
+        """
+        cls.__mkdir_parents_internal(path, path)
+
     # pylint: disable=too-many-arguments
     @classmethod
     def configure_api(cls,
@@ -233,7 +263,7 @@ class HueBridge():
         config['host'] = host
 
         try:
-            os.mkdir(os.path.dirname(config_path))
+            cls.__mkdir_parents(os.path.dirname(config_path))
         except FileExistsError:
             pass
 
