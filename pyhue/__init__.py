@@ -63,7 +63,7 @@ class HueBridge():
     """HueBridge."""
 
     DEFAULT_CONF_PATH = os.path.expanduser(
-        os.path.join('~', '.config', 'hue_bridge_config.json')
+        os.path.join('~', '.config', 'pyhue', 'hue_bridge_config.json')
     )
 
     @staticmethod
